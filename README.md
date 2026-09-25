@@ -81,9 +81,18 @@
     node --test tests/core.test.cjs
     ```
 ### ***3. Các phiên bản, cập nhật thay đổi***
-#### v0.1.0 | Bản thử nghiệm đầu tiên cùng 2 tính năng chính của tiện ích - [Link](https://github.com/nnbaocuong99/hanet-mttq-tool-cuongnnb/releases/tag/0.1.0)
+#### [v0.1.0](https://github.com/nnbaocuong99/hanet-mttq-tool-cuongnnb/releases/tag/0.1.0) | Bản thử nghiệm đầu tiên cùng 2 tính năng chính của tiện ích
 - *Hỗ trợ xuất file dữ liệu điểm danh dưới dạng file Excel theo từng ban: đọc đủ các trang, giữ nguyên cặp giờ vào/ra theo ngày trong bảng.*
 - *Sắp xếp FaceID đi sớm: giờ đến mới nhất đứng đầu, có thể đổi chiều sắp xếp.*
 
-#### v0.1.1 - [Link](https://github.com/nnbaocuong99/hanet-mttq-tool-cuongnnb/releases/tag/0.1.1)
-- *Sửa lại tính năng Sắp xếp FaceID*
+#### [v0.1.1](https://github.com/nnbaocuong99/hanet-mttq-tool-cuongnnb/releases/tag/0.1.1)
+- *Sửa lại tính năng Sắp xếp FaceID.*
+
+#### [v0.1.2](https://github.com/nnbaocuong99/hanet-mttq-tool/releases/tag/0.1.2)
+- *Bổ sung tính năng tải video cho mỗi FaceID.*
+- *Cải thiện hiệu năng.*
+
+#### [v0.1.3](https://github.com/nnbaocuong99/hanet-mttq-tool/releases/tag/0.1.3)
+- *Sửa lại tính năng download video.*
+- *Chuyển định dạng video, giữ nguyên resolution.*
+- *Sửa bugs và một số phần khác.*
