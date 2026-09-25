@@ -18,7 +18,7 @@
 5. *Đăng nhập [HANNET](https://connect.hanet.ai/) (nếu đã đăng nhập rồi thì nhấn F5 để tải lại trang).*
 
 ### ***II. Thông tin***
-- *Đây là bản thử nghiệm v0.x.x. trên địa điểm code `997606`.*
+- *Đây là bản thử nghiệm v0.1.3, lưu hành nội bộ trên địa điểm code `997606`.*
 - *Tiện ích truy cập, theo dõi điều hướng nội bộ. Giao diện bổ sung chỉ xuất hiện ở **Tổng quan** và **Face ID/Vào ra** của địa điểm 997606.*
 - *~~Nếu trình duyệt do cơ quan quản lý không cho phép cài tiện ích ngoài kho, chuyển bộ mã này cho bộ phận công nghệ thông tin để triển khai theo cấu hình của cơ quan.~~*
 
@@ -26,11 +26,12 @@
 | **Tính năng** | **Mô tả chức năng** | **Trạng thái** |
 | :--- | :--- | :---: |
 | Xuất dữ liệu | Xuất dữ liệu vào ra (đã hỗ trợ xuất theo từng ban, bản web hiện tại của Hannet đang không có | ✅ |
-| Sắp xếp FaceID theo giờ | Sắp xếp FaceID theo giờ xuất hiện | 💾 | 
-| Sắp xếp FaceID theo phòng ban | Đổi thứ tự sắp xếp của FaceID (hiện tại đang sắp xếp theo thứ tự thêm vào của các FaceID | ❌ | 
+| Sắp xếp FaceID theo giờ | Sắp xếp FaceID theo giờ xuất hiện | ✅ | 
+| Sắp xếp FaceID theo phòng ban | Đổi thứ tự sắp xếp của FaceID (hiện tại đang sắp xếp theo thứ tự thêm vào của các FaceID | ✅ |
+| Tải xuống video | Tải xuống video (của FaceID cụ thể được chọn) theo từng mối giờ, từng ngày, hoặc tất cả | ✅ |
 
 #### 🔍 3.1 Tính năng xuất dữ liệu
-1. *Vào **Face ID → Vào ra***
+1. *Vào **Face ID => Vào ra***
 2. *Chọn ngày hoặc khoảng ngày bằng bộ chọn thời gian có sẵn của HANET.* (có thể áp dụng single filter với FaceID cụ thể)
 3. *Bấm **1. Đọc đủ các trang**. Có thể chọn 50 hàng/trang trên HANET trước để giảm số lần chuyển trang. Đợi thông báo đã đọc đủ danh sách. Tiện ích tự lần lượt đọc các trang và sẽ trở về trang đầu.*
 5. *Ở mục **2. Phòng ban**, chọn Phòng, ban cần xuất ở menu dropdown và kiểm tra số FaceID.*
@@ -53,6 +54,11 @@
 > [!Warning]
 > - Nếu mở **Xem thêm** trực tiếp thì extention cũng nhận danh sách đầy đủ và tự áp dụng thứ tự đã chọn. Khi thay ngày hoặc số người thay đổi cần bấm **Cập nhật đi sớm** để cập nhật lại lại.
 > - Thứ tự áp dụng cho **giờ HANET đang hiển thị trong nhóm đi sớm**. Tiện ích không đổi giờ làm việc, phân loại đi sớm/đi trễ hoặc thay giờ ghi nhận của một người.
+
+#### 🔍 3.3 Tính năng Tải xuống video.
+1. *Vào **FaceID** => **Danh sách** hoặc **Phòng ban***
+2. *Chọn một FaceID cụ thể, và chọn ngày muốn lấy dữ liệu*
+3. *Thao tác ở menu pop-up*
 
 <br>
 
