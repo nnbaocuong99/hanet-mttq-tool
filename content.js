@@ -89,7 +89,7 @@
     if (!main) return;
     const host = document.createElement('div'); host.id = 'hanet-mttq-helper';
     const shadow = host.attachShadow({mode:'open'});
-    shadow.innerHTML = `<style>${styles}</style><section class="panel" aria-label="Tiện ích điểm danh MTTQ"><div class="head"><h2>${route === 'report' ? 'Xuất điểm danh theo ban' : 'Sắp xếp FaceID đi sớm'}</h2><span class="tag">MTTQ · v0.3.1</span></div><p>${route === 'report' ? 'Chọn khoảng thời gian trong HANET, sau đó đọc danh sách và chọn phòng ban cần xuất.' : 'Giờ đến mới nhất đứng trước trong nhóm đi sớm của ngày đang xem.'}</p><div class="actions"><button class="primary" id="read">${route === 'report' ? '1. Đọc đủ các trang' : 'Cập nhật đi sớm'}</button>${route === 'report' ? '<label>2. Phòng ban<select id="department" disabled><option>Chọn phòng ban sau khi đọc dữ liệu</option></select></label><button id="export" disabled>3. Xuất Excel</button>' : '<label>Thứ tự giờ đến<select id="direction"><option value="desc">Mới nhất trước</option><option value="asc">Sớm nhất trước</option></select></label>'}<button id="cancel" hidden>Hủy</button></div><p id="status" class="status" role="status" aria-live="polite"></p><div id="preview" class="preview"></div><p id="foot" class="foot"></p></section>`;
+    shadow.innerHTML = `<style>${styles}</style><section class="panel" aria-label="Tiện ích phục vụ hệ thống điểm danh MTTQ"><div class="head"><h2>${route === 'report' ? 'Xuất điểm danh theo ban' : 'Sắp xếp FaceID đi sớm'}</h2><span class="tag">MTTQ · v0.4.0</span></div><p>${route === 'report' ? 'Chọn khoảng thời gian trong HANET, sau đó đọc danh sách và chọn phòng ban cần xuất.' : 'Giờ đến mới nhất đứng trước trong nhóm đi sớm của ngày đang xem.'}</p><div class="actions"><button class="primary" id="read">${route === 'report' ? '1. Đọc đủ các trang' : 'Cập nhật đi sớm'}</button>${route === 'report' ? '<label>2. Phòng ban<select id="department" disabled><option>Chọn phòng ban sau khi đọc dữ liệu</option></select></label><button id="export" disabled>3. Xuất Excel</button>' : '<label>Thứ tự giờ đến<select id="direction"><option value="desc">Mới nhất trước</option><option value="asc">Sớm nhất trước</option></select></label>'}<button id="cancel" hidden>Hủy</button></div><p id="status" class="status" role="status" aria-live="polite"></p><div id="preview" class="preview"></div><p id="foot" class="foot"></p></section>`;
     state.host = host;
     state.ui = Object.fromEntries(['read','department','export','direction','cancel','status','preview','foot'].map(id => [id,shadow.getElementById(id)]));
     main.prepend(host);
@@ -110,7 +110,7 @@
     if (routeName() !== route || !state.host?.isConnected) throw new Error('Đã chuyển màn hình. Vui lòng thực hiện lại.');
     if (route === 'report') {
       const search = document.querySelector('input[placeholder="Tìm Face"]');
-      if (search && search.value.trim()) throw new Error('Hãy xóa nội dung ô “Tìm Face” của HANET rồi đọc lại để lấy đủ danh sách.');
+      if (search && search.value.trim()) throw new Error('Hãy xóa nội dung ô “Tìm FaceID” của HANET rồi đọc lại để lấy đủ danh sách.');
     }
   }
   function idsOf(page) {return page.records.map(r => r.id).join('|');}

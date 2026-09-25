@@ -1,8 +1,8 @@
 (function (root, factory) {
   'use strict';
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./video-core.js'), require('./video-dom.js'));
-  else if (root === root.top) factory(root.HanetMttqVideoCore, root.HanetMttqVideoDOM).createController(root).start();
-})(typeof window === 'undefined' ? this : window, function (Core, DOM) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./video-core.js'), require('./video-dom.js'), require('./video-job.js'));
+  else if (root === root.top && !root.HanetVideoJob.workerId(root.location.href)) factory(root.HanetMttqVideoCore, root.HanetMttqVideoDOM, root.HanetVideoJob).createController(root).start();
+})(typeof window === 'undefined' ? this : window, function (Core, DOM, Job) {
   'use strict';
   const CSS = `
     :host{display:block;min-width:0;font:13px/1.45 Arial,Helvetica,sans-serif;color:inherit;color-scheme:inherit}*{box-sizing:border-box}[hidden]{display:none!important}
@@ -20,16 +20,16 @@
   const setText = (node,value) => { if (node && node.textContent !== value) node.textContent = value; };
   function createController(win, adapters = {}) {
     const doc = win.document;
-    const settings = {poll:120,settle:500,resolveTimeout:20000,downloadTimeout:180000,...adapters.timings};
+    const settings = {poll:700,...adapters.timings};
     const delay = ms => new Promise(resolve => win.setTimeout(resolve, ms));
-    const state = {ctx:null,host:null,ui:null,items:new Map(),views:new Map(),selected:new Set(),results:new Map(),run:null};
+    const state = {ctx:null,host:null,ui:null,items:new Map(),known:new Map(),views:new Map(),selected:new Set(),results:new Map(),all:false,run:null};
     let observer, interval, scheduled = false, alive = false;
     const send = adapters.send || (message => new Promise((resolve,reject) => {
       try {
-        if (!win.chrome?.runtime?.id) throw new Error('Hãy nạp lại tiện ích và nhấn F5 trên trang HANET.');
+        if (!win.chrome?.runtime?.id) throw new Error('Load lại tiện ích và tải lại trang HANET.');
         win.chrome.runtime.sendMessage({type:'HANET_MTTQ_VIDEO',...message}, result => {
           const error = win.chrome.runtime.lastError;
-          if (error) reject(new Error('Không liên lạc được tiện ích. Hãy nạp lại tiện ích rồi nhấn F5.'));
+          if (error) reject(new Error('Không kết nối được với được tiện ích. Hãy load lại tiện ích và tải lại trang.'));
           else if (!result?.ok) reject(new Error(result?.error || 'Không nhận được kết quả tải.'));
           else resolve(result);
         });
@@ -59,7 +59,7 @@
       const busy = !!state.run;
       const selectedCount = state.selected.size;
       setText(state.ui.count, `${state.items.size} mốc đang hiển thị · Đã chọn ${selectedCount}`);
-      setText(state.ui.download, `Tải đã chọn (${selectedCount})`);
+      setText(state.ui.download, `Tải ZIP đã chọn (${selectedCount})`);
       state.ui.download.disabled = busy || !selectedCount;
       state.ui.all.disabled = busy || !state.items.size;
       state.ui.clear.disabled = busy || !selectedCount;
@@ -76,14 +76,14 @@
     function mount() {
       const panel = state.ctx?.panel;
       if (!panel || state.host?.isConnected) return;
-      const host = doc.createElement('div'); host.id = 'hanet-mttq-video-helper'; host.dataset.hanetVideoTools = 'panel';
+      const host = doc.createElement('div'); host.id = 'hanet-mttq-tool-video'; host.dataset.hanetVideoTools = 'panel';
       const shadow = host.attachShadow({mode:'open'});
-      shadow.innerHTML = `<style>${CSS}</style><section class="panel" aria-label="Tải video trong popup"><h3>Tải video trong ngày<span class="tag">v0.3.1</span></h3><p class="note">Tích ô cạnh giờ, rồi tải các video đã chọn.</p><div class="actions"><button id="all" type="button">Chọn tất cả</button><button id="clear" type="button">Bỏ chọn</button><button id="download" type="button" class="primary" disabled>Tải đã chọn (0)</button><button id="stop" type="button" hidden>Dừng tải</button></div><p id="count" class="count"></p><p id="status" class="status" role="status" aria-live="polite">Đang đọc các mốc trong popup…</p><ul id="errors" class="error" hidden></ul></section>`;
+      shadow.innerHTML = `<style>${CSS}</style><section class="panel" aria-label="Tải video trong popup"><h3>Tải video trong ngày<span class="tag">v0.4.0</span></h3><p class="note">Video MP4 H.264, Res tối đa 1080p.</p><div class="actions"><button id="all" type="button">Chọn tất cả</button><button id="clear" type="button">Bỏ chọn</button><button id="download" type="button" class="primary" disabled>Tải xuống file .ZIP gồm những tệp đã chọn (0)</button><button id="stop" type="button" hidden>Dừng tải</button></div><p id="count" class="count"></p><p id="status" class="status" role="status" aria-live="polite">Đang đọc các mốc trong popup…</p><ul id="errors" class="error" hidden></ul></section>`;
       state.host = host;
       state.ui = Object.fromEntries(['all','clear','download','stop','count','status','errors'].map(id => [id,shadow.getElementById(id)]));
-      state.ui.all.onclick = () => { for (const key of state.items.keys()) state.selected.add(key); update(); };
-      state.ui.clear.onclick = () => { state.selected.clear(); update(); };
-      state.ui.download.onclick = () => runBatch(Array.from(state.selected));
+      state.ui.all.onclick = () => { state.all=true; for (const key of state.items.keys()) state.selected.add(key); update(); };
+      state.ui.clear.onclick = () => { state.all=false; state.selected.clear(); update(); };
+      state.ui.download.onclick = () => runBatch(Array.from(state.selected),'zip');
       state.ui.stop.onclick = () => stop();
       DOM.panelHeader(panel).append(host);
     }
@@ -103,8 +103,8 @@
         button.setAttribute('aria-label','Tải video lúc ' + item.time);
         // Prevent native timeline clicks from opening a second player when selecting.
         for (const event of ['click','dblclick','pointerdown','mousedown','keydown','keyup']) host.addEventListener(event,e=>e.stopPropagation());
-        check.onchange = () => { if (check.checked) state.selected.add(item.key); else state.selected.delete(item.key); update(); };
-        button.onclick = () => runBatch([item.key]);
+        check.onchange = () => { state.all=false; if (check.checked) state.selected.add(item.key); else state.selected.delete(item.key); update(); };
+        button.onclick = () => runBatch([item.key],'mp4');
         item.timeNode.append(host);
         view = {host,check,button,item}; state.views.set(item.key,view);
       }
@@ -120,22 +120,23 @@
       if (!alive) return;
       const ctx = currentContext();
       if (ctx?.key !== state.ctx?.key || ctx?.panel !== state.ctx?.panel) {
-        stop(); removeUI(); state.items.clear(); state.selected.clear(); state.results.clear(); state.ctx = ctx;
+        stop(); removeUI(); state.items.clear(); state.known.clear(); state.selected.clear(); state.results.clear(); state.all=false; state.ctx = ctx;
       }
       if (!ctx) return;
       mount();
       const items = DOM.timeline(doc,ctx.panel);
       state.items = new Map(items.map(item=>[item.key,item]));
+      for(const item of items)state.known.set(item.key,{key:item.key,time:item.time});
       for (const [key,view] of state.views) {
         if (!state.items.has(key)) { view.host.remove(); state.views.delete(key); }
       }
-      items.forEach(decorate); update();
+      items.forEach(decorate); if(state.all&&!state.run) for(const key of state.items.keys()) state.selected.add(key); update();
       const managedHosts = new Set(Array.from(state.views.values(),view=>view.host));
       for (const host of doc.querySelectorAll('[data-hanet-video-tools="row"]')) {
         if (!managedHosts.has(host)) host.remove();
       }
       if (!state.run && !state.results.size && state.ui) {
-        status(items.length ? 'Bấm Tải cạnh giờ để tải riêng từng video.' : 'Đang chờ HANET hiển thị các mốc của ngày này.');
+        status(items.length ? 'Tải nền dùng một tab HANET và giữ danh sách ngày này mở đến khi xong.' : 'Đang chờ HANET hiển thị các mốc của ngày này.');
       }
     }
     function schedule() {
@@ -143,158 +144,50 @@
       scheduled = true; win.setTimeout(scan,180);
     }
     async function stop() {
-      const run = state.run;
-      if (!run || run.cancelled) return;
-      run.cancelled = true;
-      status('Đang dừng tải…','',run);
-      if (run.downloadId !== null) {
-        try { await send({action:'cancel',id:run.downloadId}); } catch (_) {}
-      }
+      const run=state.run;if(!run||run.cancelled)return;
+      run.cancelled=true;status('Đang dừng tải…','',run);
+      if(run.id){try{await send({action:'cancel',id:run.id});}catch(_){}}
     }
-    function snapshotPlayers() {
-      const map = new Map();
-      for (const video of doc.querySelectorAll('video')) {
-        const source = DOM.source(video);
-        map.set(video,source?.url || '');
-      }
-      return map;
-    }
-    async function resolveSource(item,run) {
-      const direct = DOM.source(item.row);
-      if (direct) return direct;
-      const baseline = new Set(DOM.dialogs(doc,true));
-      if (Array.from(baseline).some(dialog => dialog !== run.ctx.panel && !dialog.contains(run.ctx.panel))) throw new Error('Hãy đóng cửa sổ xem ảnh/video, giữ popup danh sách mốc mở rồi tải lại.');
-      const before = snapshotPlayers();
-      const oldURLs = new Set(Array.from(before.values()).filter(Boolean));
-      const opened = new Set(), activated = new Set();
-      let stableURL = '', stableAt = 0;
-      run.opened = opened;
-      item.target.click();
-      const deadline = Date.now() + settings.resolveTimeout;
-      while (Date.now() < deadline) {
-        assertActive(run);
-        for (const dialog of DOM.dialogs(doc,true)) if (!baseline.has(dialog)) opened.add(dialog);
-        const candidates = [];
-        for (const dialog of opened) {
-          const heading = dialog.querySelector('h2');
-          // Adjacent native spans have no text separator (time + camera name).
-          // Read the time leaf rather than applying a regex to concatenated text.
-          const headingTimes = Array.from(heading?.querySelectorAll('time,span,p,div,li') || [])
-            .map(node => Core.clock(DOM.text(node))).filter(Boolean);
-          if (headingTimes.length && !headingTimes.includes(item.time)) continue;
-          const candidate = DOM.source(dialog);
-          if (candidate && !oldURLs.has(candidate.url) && !candidates.some(c=>c.url===candidate.url)) candidates.push(candidate);
-          if (!candidate) {
-            const play = DOM.playControl(dialog);
-            if (play && !activated.has(play)) { activated.add(play); play.click(); }
-          }
+    function applyResults(info,run){
+      if(!state.ui||state.ctx?.key!==run.ctx.key)return;
+      state.ui.errors.replaceChildren();state.ui.errors.hidden=true;
+      for(const result of info.results||[]){
+        if(result.kind==='ready')continue;
+        state.results.set(result.key,result);
+        if(result.kind==='ok')state.selected.delete(result.key);
+        if(result.kind==='error'){
+          const li=doc.createElement('li');li.textContent=`${result.time}: ${result.message}`;
+          state.ui.errors.append(li);state.ui.errors.hidden=false;
         }
-        const urls = new Set(candidates.map(candidate=>candidate.url));
-        if (urls.size > 1) throw new Error('Có nhiều video cùng mở. Đóng các trình phát rồi tải riêng mốc này.');
-        const candidate = candidates[0];
-        if (candidate) {
-          if (candidate.url !== stableURL) { stableURL = candidate.url; stableAt = Date.now(); }
-          if (Date.now() - stableAt >= settings.settle) return candidate;
-        } else { stableURL = ''; stableAt = 0; }
-        await delay(settings.poll);
       }
-      throw new Error('HANET chưa cung cấp video cho mốc này. Hãy thử mở mốc trên HANET để kiểm tra, rồi tải lại.');
-    }
-    async function validateSource(source,run) {
-      let kind = Core.mediaKind(source.url,source.mime);
-      if (kind === 'stream') throw new Error('Mốc này dùng luồng HLS/DASH. Bản này chưa ghép luồng thành file video.');
-      if (kind === 'blob') {
-        // Fetching a real Blob succeeds; MediaSource object URLs are not files.
-        // Read only the headers here, not the video into extension memory.
-        const controller = new win.AbortController();
-        const timeout = win.setTimeout(()=>controller.abort(),12000);
-        try {
-          const response = await win.fetch(source.url,{signal:controller.signal});
-          const mime = response.headers.get('Content-Type') || '';
-          if (!response.ok || !/^video\//i.test(mime)) throw new Error('not-a-file');
-          kind = Core.mediaKind(source.url,mime);
-          if (kind === 'blob') kind = 'mp4';
-          await response.body?.cancel();
-        } catch (_) { throw new Error('Trình phát đang dùng luồng blob không tải trực tiếp được. Bản này cần nguồn file video.'); }
-        finally { win.clearTimeout(timeout); }
-      }
-      assertActive(run);
-      return kind;
-    }
-    async function waitDownload(id,run) {
-      const deadline = Date.now() + settings.downloadTimeout;
-      while (Date.now() < deadline) {
-        assertActive(run);
-        const info = await send({action:'status',id});
-        if (info.state === 'complete') return;
-        if (info.state === 'interrupted') throw new Error('Tải bị gián đoạn' + (info.error ? ' (' + info.error + ')' : '') + '. Hãy mở lại mốc rồi thử tải lại.');
-        await delay(Math.max(settings.poll,350));
-      }
-      throw new Error('Tải quá thời gian chờ. Hãy kiểm tra kết nối rồi tải lại mốc này.');
-    }
-    async function closeOpened(run) {
-      for (const dialog of Array.from(run.opened || []).reverse()) {
-        if (!dialog.isConnected || !DOM.rendered(dialog)) continue;
-        const close = DOM.closeControl(dialog);
-        if (close) close.click();
-        else if (dialog.matches('dialog') && typeof dialog.close === 'function') dialog.close();
-      }
-      // Allow closing animations to unmount before opening the next video.
-      const deadline = Date.now() + 1500;
-      while (Date.now() < deadline && Array.from(run.opened || []).some(dialog => DOM.rendered(dialog))) await delay(settings.poll);
-      run.opened = null;
-    }
-    async function runBatch(keys) {
-      if (state.run || !keys.length || !state.ctx) return;
-      const run = {ctx:{...state.ctx},cancelled:false,downloadId:null,opened:null};
-      state.run = run;
-      state.ui.errors.replaceChildren(); state.ui.errors.hidden = true;
       update();
-      let done = 0, failed = 0;
-      try {
-        for (let index = 0; index < keys.length; index++) {
+    }
+    async function runBatch(keys,output='zip') {
+      if(state.run||!keys.length||!state.ctx)return;
+      const run={ctx:{...state.ctx},cancelled:false,id:null};state.run=run;
+      state.ui.errors.replaceChildren();state.ui.errors.hidden=true;update();
+      try{
+        assertActive(run);
+        const items=keys.map(key=>state.known.get(key)).map(item=>{
+          if(!item)throw new Error('Mốc đã chọn không còn hiển thị. Hãy chọn lại.');
+          return {key:item.key,time:item.time};
+        });
+        status('Đang chuẩn bị tải nền…','',run);
+        const started=await send({action:'start',faceId:run.ctx.faceId,date:run.ctx.date,items,output,all:output==='zip'&&state.all});
+        run.id=started.id;
+        assertActive(run);
+        while(true){
           assertActive(run);
-          const key = keys[index];
-          const item = DOM.timeline(doc,run.ctx.panel).find(candidate=>candidate.key===key);
-          const time = item?.time || 'Mốc đã chọn';
-          try {
-            if (!item) throw new Error('Mốc đã chọn không còn hiển thị. Cuộn đến mốc hoặc chọn lại rồi tải lại.');
-            status(`Đang lấy video ${index + 1}/${keys.length} · ${time}…`,'',run);
-            const source = await resolveSource(item,run);
-            const kind = await validateSource(source,run);
-            assertActive(run);
-            const result = await send({action:'start',url:source.url,filename:Core.filename(run.ctx,item,kind)});
-            run.downloadId = result.id;
-            // A click on Stop while the background was starting must cancel the
-            // newly created download too, before proceeding to any next item.
-            assertActive(run);
-            status(`Đang tải video ${index + 1}/${keys.length} · ${time}…`,'',run);
-            await waitDownload(result.id,run);
-            assertActive(run);
-            run.downloadId = null;
-            done++;
-            state.results.set(key,{kind:'ok',message:'Đã tải xong video lúc ' + time});
-            state.selected.delete(key);
-          } catch (error) {
-            if (run.downloadId !== null) {
-              try { await send({action:'cancel',id:run.downloadId}); } catch (_) {}
-              run.downloadId = null;
-            }
-            if (run.cancelled || currentContext()?.key !== run.ctx.key || currentContext()?.panel !== run.ctx.panel) throw new Error('Đã dừng tải.');
-            failed++;
-            state.results.set(key,{kind:'error',message:error.message});
-            if (state.ui && state.ctx?.key === run.ctx.key) {
-              const li = doc.createElement('li'); li.textContent = `${time}: ${error.message}`;
-              state.ui.errors.append(li); state.ui.errors.hidden = false;
-            }
-          } finally { await closeOpened(run); update(); }
+          const info=await send({action:'status',id:run.id});
+          assertActive(run);applyResults(info,run);
+          status(info.status,info.state==='failed'?'error':info.state==='complete'?'ok':'',run);
+          if(info.state!=='running'){state.all=false;break;}
+          await delay(settings.poll);
         }
-        status(`Đã tải xong ${done}/${keys.length} video.${failed ? ` ${failed} mốc chưa tải được; xem chi tiết bên dưới.` : ''}`,failed ? 'error' : 'ok',run);
-      } catch (_) {
-        status(`Đã dừng. Tải xong ${done}/${keys.length} video. Các mốc chưa tải vẫn được giữ chọn.`,'',run);
-      } finally {
-        state.run = null; update();
-      }
+      }catch(error){
+        if(run.id){try{await send({action:'cancel',id:run.id});}catch(_){}}
+        status(run.cancelled?'Đã dừng tải. Các mốc chưa lưu vẫn được giữ chọn.':error.message,run.cancelled?'':'error',run);
+      }finally{if(state.run===run)state.run=null;update();}
     }
     function start() {
       if (alive) return;

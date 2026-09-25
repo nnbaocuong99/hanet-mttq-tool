@@ -1,0 +1,15 @@
+{
+  "vendor/core/LICENSE": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+  "vendor/core/ffmpeg-core.js": "67a48f11645f85439f3fde4f2119042c16b374b910206b7a7a24f342e28dcae3",
+  "vendor/core/ffmpeg-core.wasm": "9f57947a5bd530d8f00c5b3f2cb2a3492faa7e5d823315342d6a8656d0a6b7b7",
+  "vendor/core/package.json": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae",
+  "vendor/ffmpeg/LICENSE": "3e123e29517d76504ffce77b3f8e2ccffd4712493f27694b0aba3e376676459f",
+  "vendor/ffmpeg/classes.js": "7a829c898bdbc3a8806652a5502d9101178ce4e988a2c50b3abc1306ce4fc919",
+  "vendor/ffmpeg/const.js": "9e3bc9dd84781c81daf459e2c46eeec815edac35089832681d9a9a0f383060d0",
+  "vendor/ffmpeg/errors.js": "619310d7ef5fe5fefa0a31927db862b7c291713cfef4d71753fa8aafd18f4db6",
+  "vendor/ffmpeg/index.js": "cad19572420f7ead17272082d9582ebaed7f2856e19875542f83daf8d25d3b5d",
+  "vendor/ffmpeg/package.json": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae",
+  "vendor/ffmpeg/types.js": "72f80e6fd44fcd18b55c9a0deb3bc70b9bb37480cf969045ca4521f5a11300f5",
+  "vendor/ffmpeg/utils.js": "8c2e0e16445f8d3a0acbb812f2c60541a92c88ed0bf9ffe96c52e7fb6c8b1d72",
+  "vendor/ffmpeg/worker.js": "feff0ac937ea225e997e1fae997a74f8b8d572423a526da59eb56624b1f3cde7"
+}
