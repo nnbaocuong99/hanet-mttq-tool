@@ -1,12 +1,30 @@
 {
   "manifest_version": 3,
   "name": "hanet-mttq-tool",
-  "version": "0.1.1",
+  "version": "0.3.1",
   "description": "Tool hỗ trợ",
-  "content_scripts": [{
-    "matches": ["https://connect.hanet.ai/*"],
-    "js": ["core.js", "dom.js", "content.js"],
-    "run_at": "document_idle",
-    "all_frames": false
-  }]
+  "minimum_chrome_version": "102",
+  "permissions": [
+    "downloads"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://connect.hanet.ai/*"
+      ],
+      "js": [
+        "core.js",
+        "dom.js",
+        "content.js",
+        "video-core.js",
+        "video-dom.js",
+        "video-content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
 }

@@ -1,10 +1,12 @@
 {
   "name": "hanet-mttq-helper",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "private": true,
   "scripts": {
-    "test": "node --test tests/core.test.cjs tests/dom.test.cjs",
+    "test": "node --test tests/*.test.cjs",
     "fixture": "node tests/serve.cjs"
   },
-  "devDependencies": {"jsdom": "26.1.0"}
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
 }
